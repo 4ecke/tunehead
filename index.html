@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tunehead — your personal music brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --bg2: #161616;
+    --bg3: #1f1f1f;
+    --bg4: #282828;
+    --border: #2a2a2a;
+    --border2: #383838;
+    --text: #f0ede8;
+    --text2: #9a9590;
+    --text3: #5a5550;
+    --accent: #c8f060;
+    --accent2: #a8d040;
+    --red: #ff5c5c;
+    --red-bg: #2a1515;
+    --green: #60f080;
+    --green-bg: #102a18;
+    --amber: #f0b840;
+    --amber-bg: #2a1f08;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* LAYOUT */
+  .shell { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-word {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .logo-word span { color: var(--accent); }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text2);
+    font-weight: 400;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--bg4); color: var(--text); }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .api-status {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .api-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red); flex-shrink: 0;
+  }
+  .api-dot.ok { background: var(--accent); }
+
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    min-height: 100vh;
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 40px 48px; max-width: 820px; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 32px; }
+  .page-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .page-sub {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 6px;
+  }
+
+  /* INPUTS */
+  label.field-label {
+    display: block;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  textarea, input[type=text], input[type=password] {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    resize: vertical;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  textarea:focus, input[type=text]:focus, input[type=password]:focus {
+    border-color: var(--accent);
+  }
+  textarea::placeholder, input::placeholder { color: var(--text3); }
+
+  .field { margin-bottom: 20px; }
+
+  /* CHIPS */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    font-size: 12.5px;
+    color: var(--text2);
+    cursor: pointer;
+    background: none;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: var(--border2); background: var(--bg3); color: var(--text); }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.06); }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 4px;
+    width: fit-content;
+    margin-bottom: 28px;
+  }
+  .toggle-opt {
+    padding: 7px 18px;
+    border-radius: 99px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.2s;
+    border: none; background: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .toggle-opt.active { background: var(--accent); color: #0e0e0e; font-weight: 500; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 11px 24px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0e0e0e;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-ghost:hover { border-color: var(--border2); background: var(--bg3); color: var(--text); }
+
+  .btn-row { display: flex; gap: 10px; align-items: center; margin-top: 24px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* RECOMMENDATION CARDS */
+  .rec-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+
+  .rec-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    transition: border-color 0.15s;
+    animation: slideIn 0.3s ease both;
+  }
+  .rec-card:nth-child(1) { animation-delay: 0.05s; }
+  .rec-card:nth-child(2) { animation-delay: 0.1s; }
+  .rec-card:nth-child(3) { animation-delay: 0.15s; }
+  .rec-card:nth-child(4) { animation-delay: 0.2s; }
+  .rec-card:nth-child(5) { animation-delay: 0.25s; }
+  .rec-card:nth-child(6) { animation-delay: 0.3s; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .rec-card.liked { border-color: rgba(96,240,128,0.3); background: rgba(16,42,24,0.5); }
+  .rec-card.disliked { border-color: rgba(255,92,92,0.2); opacity: 0.5; }
+
+  .rec-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .rec-title { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--text); letter-spacing: -0.3px; }
+  .rec-artist { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .rec-year { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  .match-badge {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .match-perfect { background: rgba(200,240,96,0.12); color: var(--accent); }
+  .match-similar { background: rgba(96,240,128,0.1); color: var(--green); }
+  .match-vibe { background: rgba(240,184,64,0.1); color: var(--amber); }
+  .match-explore { background: var(--bg3); color: var(--text2); }
+
+  .rec-why { font-size: 13.5px; color: var(--text2); margin-top: 10px; line-height: 1.5; }
+
+  .rec-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .rec-tag {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 9px;
+    border-radius: 99px;
+    background: var(--bg3);
+    color: var(--text3);
+    border: 1px solid var(--border);
+  }
+
+  .rec-actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .rec-btn {
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    border: 1px solid var(--border2);
+    background: none;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .rec-btn:hover { background: var(--bg3); color: var(--text); }
+  .rec-btn.love { border-color: rgba(96,240,128,0.4); color: var(--green); }
+  .rec-btn.love:hover { background: var(--green-bg); }
+  .rec-btn.hate { border-color: rgba(255,92,92,0.3); color: var(--red); }
+  .rec-btn.hate:hover { background: var(--red-bg); }
+  .rec-btn.more { border-color: rgba(200,240,96,0.3); color: var(--accent); }
+  .rec-btn.more:hover { background: rgba(200,240,96,0.06); }
+  .rec-link { margin-left: auto; font-size: 12px; color: var(--text3); text-decoration: none; font-family: 'DM Mono', monospace; }
+  .rec-link:hover { color: var(--text2); }
+
+  /* LOADING */
+  .loading-state {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--text3);
+    font-size: 14px;
+    display: none;
+  }
+  .loading-state.visible { display: block; }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TASTE PROFILE */
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .profile-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+  }
+  .profile-card-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .stat-number { font-family: 'Instrument Serif', serif; font-size: 36px; color: var(--text); }
+  .stat-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag-cloud-item {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 11px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .tag-cloud-item.strong { border-color: rgba(200,240,96,0.4); color: var(--accent); font-weight: 500; }
+  .tag-cloud-item.medium { border-color: var(--border2); color: var(--text); }
+
+  .artist-list { display: flex; flex-direction: column; gap: 6px; }
+  .artist-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+  }
+  .artist-name { color: var(--text); }
+  .artist-score {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+  }
+  .artist-score.pos { background: var(--green-bg); color: var(--green); }
+  .artist-score.neg { background: var(--red-bg); color: var(--red); }
+
+  .empty-state {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 12px; }
+
+  /* HISTORY */
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+  .history-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .history-query { font-size: 13.5px; color: var(--text); flex: 1; }
+  .history-meta { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .history-mode {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--bg3);
+    color: var(--text3);
+  }
+
+  /* SETTINGS */
+  .settings-section { margin-bottom: 32px; }
+  .settings-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 20px; margin-bottom: 16px;
+  }
+  .settings-label { font-size: 13.5px; color: var(--text); }
+  .settings-hint { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  /* NOTICE / ALERT */
+  .notice {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 20px;
+    border: 1px solid;
+  }
+  .notice-amber { background: var(--amber-bg); border-color: rgba(240,184,64,0.25); color: var(--amber); }
+  .notice-green { background: var(--green-bg); border-color: rgba(96,240,128,0.25); color: var(--green); }
+  .notice-red { background: var(--red-bg); border-color: rgba(255,92,92,0.25); color: var(--red); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; }
+    .main { margin-left: 0; }
+    .page { padding: 24px 20px; }
+    .profile-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-word">Tune<span>head</span></div>
+      <div class="logo-sub">your personal music brain</div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" onclick="showPage('discover')" id="nav-discover">
+        <span class="nav-icon">◎</span> Discover
+      </button>
+      <button class="nav-item" onclick="showPage('profile')" id="nav-profile">
+        <span class="nav-icon">◈</span> Taste profile
+      </button>
+      <button class="nav-item" onclick="showPage('history')" id="nav-history">
+        <span class="nav-icon">◷</span> History
+      </button>
+      <button class="nav-item" onclick="showPage('settings')" id="nav-settings">
+        <span class="nav-icon">◧</span> Settings
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="api-status">
+        <div class="api-dot" id="api-dot"></div>
+        <span id="api-status-text">no api key</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DISCOVER PAGE -->
+    <div class="page active" id="page-discover">
+      <div class="page-header">
+        <div class="page-title">Find your next song</div>
+        <div class="page-sub">The more you rate, the smarter this gets.</div>
+      </div>
+
+      <div id="no-key-notice" class="notice notice-amber" style="display:none">
+        No API key set — go to Settings and add yours to get recommendations.
+      </div>
+
+      <!-- MODE TOGGLE -->
+      <div class="toggle-row">
+        <button class="toggle-opt active" id="mode-comfort" onclick="setMode('comfort')">Comfort zone</button>
+        <button class="toggle-opt" id="mode-discover" onclick="setMode('discovery')">Discovery mode</button>
+      </div>
+
+      <div class="field">
+        <label class="field-label">What are you listening to?</label>
+        <textarea id="input-query" rows="3" placeholder="e.g. Blur — 13, Wilco — Yankee Hotel Foxtrot&#10;Or just a vibe: 'noisy guitar with melancholic lyrics'"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Avoid (optional)</label>
+        <div class="chips" id="avoid-chips">
+          <button class="chip" onclick="toggleChip(this,'no disco or funk')">No disco / funk</button>
+          <button class="chip" onclick="toggleChip(this,'no heavy metal or screamo')">No metal / screamo</button>
+          <button class="chip" onclick="toggleChip(this,'minimal or no autotune')">Minimal autotune</button>
+          <button class="chip" onclick="toggleChip(this,'no rap or hip-hop')">No rap / hip-hop</button>
+          <button class="chip" onclick="toggleChip(this,'no country')">No country</button>
+          <button class="chip" onclick="toggleChip(this,'no electronic / EDM')">No EDM</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Extra notes (optional)</label>
+        <input type="text" id="input-extra" placeholder="e.g. I love noisy guitar, different languages are fine, nothing over 5 mins">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="rec-btn" onclick="getRecommendations()">Get recommendations</button>
+        <button class="btn btn-ghost" onclick="clearResults()">Clear</button>
+      </div>
+
+      <div class="loading-state" id="loading">
+        <div class="spinner"></div>
+        Asking Claude about your taste...
+      </div>
+
+      <div id="results-area"></div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="page-header">
+        <div class="page-title">Your taste profile</div>
+        <div class="page-sub">Built up from everything you've liked and passed on.</div>
+      </div>
+      <div id="profile-content"></div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <div class="page-title">Search history</div>
+        <div class="page-sub">Every time you've looked for music here.</div>
+      </div>
+      <div id="history-content"></div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure your personal music brain.</div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Anthropic API key</div>
+        <div id="settings-api-notice" class="notice notice-amber">
+          You need an API key from console.anthropic.com — it costs fractions of a cent per search.
+        </div>
+        <div class="field">
+          <label class="field-label">API Key</label>
+          <input type="password" id="api-key-input" placeholder="sk-ant-...">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveApiKey()">Save key</button>
+          <button class="btn btn-ghost" onclick="clearApiKey()">Remove key</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="settings-section">
+        <div class="settings-title">Saved preferences</div>
+        <div class="field">
+          <label class="field-label">Always avoid (pre-fills every search)</label>
+          <input type="text" id="global-avoid" placeholder="e.g. no rap, no EDM">
+        </div>
+        <div class="field">
+          <label class="field-label">Always include</label>
+          <input type="text" id="global-include" placeholder="e.g. different languages fine, love noisy guitar">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveGlobalPrefs()">Save preferences</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="settings-section">
+        <div class="settings-title">Data</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Export taste profile</div>
+            <div class="settings-hint">Download your full listening history and ratings as JSON</div>
+          </div>
+          <button class="btn btn-ghost" onclick="exportData()">Export</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Reset all data</div>
+            <div class="settings-hint">Wipes ratings, history, and learned preferences</div>
+          </div>
+          <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(255,92,92,0.3)" onclick="resetData()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  mode: 'comfort',
+  activeChips: new Set(),
+  currentRecs: [],
+  ratings: {},       // songKey -> 'liked' | 'disliked' | 'more' | 'nothing'
+  tagScores: {},     // tag -> score (positive = liked, negative = disliked)
+  artistScores: {},  // artist -> score
+  history: [],       // [{query, mode, timestamp, recCount}]
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  try {
+    const saved = localStorage.getItem('tunehead_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.ratings = parsed.ratings || {};
+      state.tagScores = parsed.tagScores || {};
+      state.artistScores = parsed.artistScores || {};
+      state.history = parsed.history || [];
+    }
+  } catch(e) {}
+
+  const key = localStorage.getItem('tunehead_api_key');
+  if (key) {
+    document.getElementById('api-key-input').value = key;
+    document.getElementById('api-dot').classList.add('ok');
+    document.getElementById('api-status-text').textContent = 'api key set';
+    document.getElementById('settings-api-notice').style.display = 'none';
+  } else {
+    document.getElementById('no-key-notice').style.display = 'block';
+  }
+
+  const globalAvoid = localStorage.getItem('tunehead_avoid') || '';
+  const globalInclude = localStorage.getItem('tunehead_include') || '';
+  document.getElementById('global-avoid').value = globalAvoid;
+  document.getElementById('global-include').value = globalInclude;
+  if (globalAvoid) document.getElementById('input-extra').placeholder = globalAvoid + ' — ' + document.getElementById('input-extra').placeholder;
+}
+
+function saveState() {
+  localStorage.setItem('tunehead_state', JSON.stringify({
+    ratings: state.ratings,
+    tagScores: state.tagScores,
+    artistScores: state.artistScores,
+    history: state.history,
+  }));
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'profile') renderProfile();
+  if (page === 'history') renderHistory();
+}
+
+// ─── MODE ─────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('mode-comfort').classList.toggle('active', m === 'comfort');
+  document.getElementById('mode-discover').classList.toggle('active', m === 'discovery');
+}
+
+// ─── CHIPS ────────────────────────────────────────────────────────────────────
+function toggleChip(el, val) {
+  if (state.activeChips.has(val)) {
+    state.activeChips.delete(val);
+    el.classList.remove('active');
+  } else {
+    state.activeChips.add(val);
+    el.classList.add('active');
+  }
+}
+
+// ─── BUILD PROMPT ─────────────────────────────────────────────────────────────
+function buildPrompt(query) {
+  const avoids = [...state.activeChips];
+  const globalAvoid = localStorage.getItem('tunehead_avoid') || '';
+  const globalInclude = localStorage.getItem('tunehead_include') || '';
+  const extra = document.getElementById('input-extra').value.trim();
+
+  // Build taste summary from learned data
+  const likedArtists = Object.entries(state.artistScores)
+    .filter(([,v]) => v >= 2).sort((a,b) => b[1]-a[1]).slice(0,8).map(([k]) => k);
+  const dislikedArtists = Object.entries(state.artistScores)
+    .filter(([,v]) => v <= -2).sort((a,b) => a[1]-b[1]).slice(0,5).map(([k]) => k);
+  const likedTags = Object.entries(state.tagScores)
+    .filter(([,v]) => v >= 2).sort((a,b) => b[1]-a[1]).slice(0,10).map(([k]) => k);
+  const dislikedTags = Object.entries(state.tagScores)
+    .filter(([,v]) => v <= -2).sort((a,b) => a[1]-b[1]).slice(0,5).map(([k]) => k);
+
+  let learnedContext = '';
+  if (likedArtists.length || likedTags.length) {
+    learnedContext += '\n\nLEARNED USER TASTE (from previous ratings — weight this heavily):';
+    if (likedArtists.length) learnedContext += `\nArtists they consistently enjoy: ${likedArtists.join(', ')}`;
+    if (dislikedArtists.length) learnedContext += `\nArtists they consistently dislike: ${dislikedArtists.join(', ')}`;
+    if (likedTags.length) learnedContext += `\nSonic qualities they love: ${likedTags.join(', ')}`;
+    if (dislikedTags.length) learnedContext += `\nSonic qualities they dislike: ${dislikedTags.join(', ')}`;
+  }
+
+  const modeInstruction = state.mode === 'discovery'
+    ? 'MODE: Discovery — push the user toward the outer edges of their taste. Include at least 2 recommendations from genres or artists they probably haven\'t heard of. Be adventurous.'
+    : 'MODE: Comfort — stay very close to what the user already loves. Prioritize sonic similarity over novelty.';
+
+  let avoidText = '';
+  if (avoids.length) avoidText += `\nAvoid: ${avoids.join(', ')}`;
+  if (globalAvoid) avoidText += `\nGlobal avoid preference: ${globalAvoid}`;
+
+  let includeText = '';
+  if (extra) includeText += `\nExtra notes: ${extra}`;
+  if (globalInclude) includeText += `\nGlobal preferences: ${globalInclude}`;
+
+  return `You are a deeply knowledgeable music recommendation engine with expertise in sonic texture, production style, BPM, instrumentation, mood, and music history across all genres and eras.
+
+${modeInstruction}
+
+The user is listening to or loves: ${query}${avoidText}${includeText}${learnedContext}
+
+Give exactly 6 song recommendations. Focus on matching actual sonic qualities — production style, tempo, mood, instrumentation, vocal style. Do not just match genre labels.
+
+Respond ONLY with a valid JSON array. No markdown, no backticks, no preamble. Format:
+[
+  {
+    "title": "Song Title",
+    "artist": "Artist Name",
+    "album": "Album Name",
+    "year": 2001,
+    "why": "One specific sentence naming concrete sonic similarities — e.g. reverb-drenched Telecaster, similar chaotic production to A Ghost is Born, same slacker-rock BPM",
+    "tags": ["tag1","tag2","tag3","tag4"],
+    "matchStrength": "near-perfect match"
+  }
+]
+matchStrength must be one of: "near-perfect match", "very similar", "same vibe", "worth exploring"
+tags: 3-5 short descriptors like "shoegaze", "120bpm", "lo-fi", "melancholic", "noisy guitar", "krautrock"
+Return only the JSON array.`;
+}
+
+// ─── GET RECOMMENDATIONS ──────────────────────────────────────────────────────
+async function getRecommendations() {
+  const query = document.getElementById('input-query').value.trim();
+  if (!query) { alert('Enter something you\'re listening to first.'); return; }
+
+  const apiKey = localStorage.getItem('tunehead_api_key');
+  if (!apiKey) { showPage('settings'); return; }
+
+  document.getElementById('rec-btn').disabled = true;
+  document.getElementById('loading').classList.add('visible');
+  document.getElementById('results-area').innerHTML = '';
+
+  // Save to history
+  state.history.unshift({ query: query.slice(0, 80), mode: state.mode, timestamp: Date.now(), recCount: 6 });
+  if (state.history.length > 50) state.history.pop();
+  saveState();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: buildPrompt(query) }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      const msg = data.error.message || JSON.stringify(data.error);
+      throw new Error(msg);
+    }
+    const text = data.content.map(b => b.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    state.currentRecs = JSON.parse(clean);
+    renderRecs(state.currentRecs);
+  } catch(e) {
+    document.getElementById('results-area').innerHTML = `<div class="notice notice-red">Error: ${e.message}</div>`;
+  } finally {
+    document.getElementById('rec-btn').disabled = false;
+    document.getElementById('loading').classList.remove('visible');
+  }
+}
+
+// ─── RENDER RECS ──────────────────────────────────────────────────────────────
+function renderRecs(recs) {
+  const area = document.getElementById('results-area');
+  area.innerHTML = `<div class="rec-grid">${recs.map((r, i) => recCard(r, i)).join('')}</div>`;
+}
+
+function recCard(r, i) {
+  const key = `${r.artist}__${r.title}`;
+  const rating = state.ratings[key];
+  const statusClass = rating === 'liked' ? 'liked' : rating === 'disliked' ? 'disliked' : '';
+
+  const badgeClass = {
+    'near-perfect match': 'match-perfect',
+    'very similar': 'match-similar',
+    'same vibe': 'match-vibe',
+    'worth exploring': 'match-explore',
+  }[r.matchStrength] || 'match-explore';
+
+  const tags = (r.tags || []).map(t => `<span class="rec-tag">${t}</span>`).join('');
+  const spotifyQ = encodeURIComponent(`${r.title} ${r.artist}`);
+
+  return `<div class="rec-card ${statusClass}" id="card-${i}">
+    <div class="rec-top">
+      <div>
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-artist">${r.artist}${r.album ? ` — ${r.album}` : ''}</div>
+        <div class="rec-year">${r.year || ''}</div>
+      </div>
+      <span class="match-badge ${badgeClass}">${r.matchStrength}</span>
+    </div>
+    <div class="rec-why">${r.why}</div>
+    <div class="rec-tags">${tags}</div>
+    <div class="rec-actions">
+      <button class="rec-btn love" onclick="rateRec(${i}, 'liked')">+ love it</button>
+      <button class="rec-btn hate" onclick="rateRec(${i}, 'disliked')">— pass</button>
+      <button class="rec-btn more" onclick="moreOfThis(${i})">more like this ↗</button>
+      <a class="rec-link" href="https://open.spotify.com/search/${spotifyQ}" target="_blank">spotify ↗</a>
+    </div>
+  </div>`;
+}
+
+// ─── RATING ───────────────────────────────────────────────────────────────────
+function rateRec(i, rating) {
+  const rec = state.currentRecs[i];
+  if (!rec) return;
+  const key = `${rec.artist}__${rec.title}`;
+
+  // Undo previous rating first
+  const prev = state.ratings[key];
+  if (prev) {
+    const sign = prev === 'liked' ? -1 : 1;
+    (rec.tags || []).forEach(t => { state.tagScores[t] = (state.tagScores[t] || 0) + sign; });
+    state.artistScores[rec.artist] = (state.artistScores[rec.artist] || 0) + sign;
+  }
+
+  state.ratings[key] = rating;
+  const sign = rating === 'liked' ? 1 : -1;
+  (rec.tags || []).forEach(t => { state.tagScores[t] = (state.tagScores[t] || 0) + sign; });
+  state.artistScores[rec.artist] = (state.artistScores[rec.artist] || 0) + sign;
+
+  saveState();
+
+  // Update card visually
+  const card = document.getElementById('card-' + i);
+  if (card) {
+    card.classList.remove('liked', 'disliked');
+    card.classList.add(rating);
+  }
+}
+
+function moreOfThis(i) {
+  const rec = state.currentRecs[i];
+  if (!rec) return;
+  rateRec(i, 'liked');
+  document.getElementById('input-query').value = `${rec.artist} — ${rec.title}`;
+  getRecommendations();
+}
+
+// ─── CLEAR ────────────────────────────────────────────────────────────────────
+function clearResults() {
+  document.getElementById('results-area').innerHTML = '';
+  document.getElementById('input-query').value = '';
+  state.currentRecs = [];
+}
+
+// ─── PROFILE ──────────────────────────────────────────────────────────────────
+function renderProfile() {
+  const el = document.getElementById('profile-content');
+  const totalRatings = Object.keys(state.ratings).length;
+  const liked = Object.values(state.ratings).filter(v => v === 'liked').length;
+  const disliked = Object.values(state.ratings).filter(v => v === 'disliked').length;
+  const searches = state.history.length;
+
+  if (totalRatings === 0 && searches === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">◎</div>No taste data yet — start searching and rating songs to build your profile.</div>`;
+    return;
+  }
+
+  const likedArtists = Object.entries(state.artistScores)
+    .filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const dislikedArtists = Object.entries(state.artistScores)
+    .filter(([,v]) => v < 0).sort((a,b) => a[1]-b[1]).slice(0,5);
+  const likedTags = Object.entries(state.tagScores)
+    .filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).slice(0,16);
+
+  el.innerHTML = `
+    <div class="profile-grid">
+      <div class="profile-card">
+        <div class="profile-card-title">Total searches</div>
+        <div class="stat-number">${searches}</div>
+        <div class="stat-label">times you've searched</div>
+      </div>
+      <div class="profile-card">
+        <div class="profile-card-title">Songs rated</div>
+        <div class="stat-number">${totalRatings}</div>
+        <div class="stat-label">${liked} liked · ${disliked} passed on</div>
+      </div>
+    </div>
+
+    ${likedTags.length ? `
+    <div class="profile-card" style="margin-bottom:16px">
+      <div class="profile-card-title">Sonic qualities you love</div>
+      <div class="tag-cloud">
+        ${likedTags.map(([t,v]) => `<span class="tag-cloud-item ${v >= 4 ? 'strong' : v >= 2 ? 'medium' : ''}">${t}</span>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${likedArtists.length ? `
+    <div class="profile-card" style="margin-bottom:16px">
+      <div class="profile-card-title">Artists you've gravitated toward</div>
+      <div class="artist-list">
+        ${likedArtists.map(([a,v]) => `<div class="artist-row"><span class="artist-name">${a}</span><span class="artist-score pos">+${v}</span></div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    ${dislikedArtists.length ? `
+    <div class="profile-card">
+      <div class="profile-card-title">Artists you've passed on</div>
+      <div class="artist-list">
+        ${dislikedArtists.map(([a,v]) => `<div class="artist-row"><span class="artist-name">${a}</span><span class="artist-score neg">${v}</span></div>`).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById('history-content');
+  if (!state.history.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">◷</div>No history yet — start searching for music.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="history-list">
+    ${state.history.map(h => `
+      <div class="history-item">
+        <div class="history-query">${h.query}</div>
+        <span class="history-mode">${h.mode}</span>
+        <div class="history-meta">${formatDate(h.timestamp)}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  localStorage.setItem('tunehead_api_key', key);
+  document.getElementById('api-dot').classList.add('ok');
+  document.getElementById('api-status-text').textContent = 'api key set';
+  document.getElementById('settings-api-notice').style.display = 'none';
+  document.getElementById('no-key-notice').style.display = 'none';
+  alert('API key saved!');
+}
+
+function clearApiKey() {
+  localStorage.removeItem('tunehead_api_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-dot').classList.remove('ok');
+  document.getElementById('api-status-text').textContent = 'no api key';
+  document.getElementById('settings-api-notice').style.display = 'block';
+  document.getElementById('no-key-notice').style.display = 'block';
+}
+
+function saveGlobalPrefs() {
+  localStorage.setItem('tunehead_avoid', document.getElementById('global-avoid').value.trim());
+  localStorage.setItem('tunehead_include', document.getElementById('global-include').value.trim());
+  alert('Preferences saved — they\'ll be included in every search.');
+}
+
+function exportData() {
+  const data = {
+    exported: new Date().toISOString(),
+    ratings: state.ratings,
+    tagScores: state.tagScores,
+    artistScores: state.artistScores,
+    history: state.history,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'tunehead-profile.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetData() {
+  if (!confirm('This will wipe all your ratings, history, and learned taste data. Are you sure?')) return;
+  state.ratings = {}; state.tagScores = {}; state.artistScores = {}; state.history = [];
+  saveState();
+  alert('Data reset.');
+}
+
+// ─── RUN ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
